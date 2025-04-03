@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from openai import OpenAI
 import requests
+from flask_cors import CORS  # Import CORS
 
 from dotenv import load_dotenv
 import os
@@ -8,6 +9,7 @@ import os
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app, origins=["http://localhost:3000"])
 
 PLANT_API_KEY = os.getenv("PLANT_API_KEY") # 500 a day
 API_ENDPOINT = f"https://my-api.plantnet.org/v2/identify/all?api-key={PLANT_API_KEY}"
@@ -48,6 +50,18 @@ structure = """{
   }
 }"""
 
+@app.route('/stats', methods=['GET'])
+def index():
+    humidity = "50-70%"
+    light = "Indirect sunlight"
+    watering = "Every 5 days"
+    temperature = "20-25°C"
+    return jsonify({
+        "humidity": humidity,
+        "messages": "This is a test message",
+        "watering": watering,
+        "temperature": temperature
+    })
 
 @app.route('/identify', methods=['POST'])
 def identify():
@@ -82,10 +96,10 @@ def identify():
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[{"role": "user", "content": "Give me data in JSON format (only output json as a result, nothing else) for the plant type: " + common_name + " using this json structure: " + structure}]
+        messages=[{"role": "user", "content": "Give me data in JSON format (only output json as a result, nothing else, don't even include ```json for formatting) for the plant type: " + common_name + " using this json structure: " + structure}]
     )
 
-    return jsonify(response.choices[0].message.content)
+    return (response.choices[0].message.content)
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=8080)
